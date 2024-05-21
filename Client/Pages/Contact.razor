@@ -1,0 +1,137 @@
+﻿@page "/Contact"
+@using ContactTask.Shared.Data
+@inject HttpClient Http
+
+<PageTitle>Contact Page</PageTitle>
+
+<h1>Contact Page</h1>
+<div class="row">
+    <div class="col col-6">
+       
+
+        <EditForm Model="@newContact" OnValidSubmit="SubmitContact">
+            <DataAnnotationsValidator />
+
+            <div class="form-group">
+                <label for="FirstName">First Name:</label>
+                <InputText id="FirstName" @bind-Value="@newContact.FirstName" class="form-control" />
+                <ValidationMessage For="@(() => newContact.FirstName)" />
+            </div>
+
+            <div class="form-group">
+                <label for="LastName">Last Name:</label>
+                <InputText id="LastName" @bind-Value="@newContact.LastName" class="form-control" />
+                <ValidationMessage For="@(() => newContact.LastName)" />
+            </div>
+
+            <div class="form-group">
+                <label for="Email">Email:</label>
+                <InputText id="Email" @bind-Value="@newContact.Email" class="form-control" />
+                <ValidationMessage For="@(() => newContact.Email)" />
+            </div>
+
+            <div class="form-group">
+                <label for="PhoneNumber">Phone Number:</label>
+                <InputText id="PhoneNumber" @bind-Value="@newContact.PhoneNumber" class="form-control" />
+            </div>
+            @if(edite == false)
+            {
+                <button type="submit" class="btn btn-primary mt-4">Create</button>
+            }
+            else
+            {
+                <button type="submit" class="btn btn-primary mt-4">Update</button>
+            }
+        </EditForm>
+
+    </div>
+ 
+    @* we will display added data in this region *@
+  
+    <div class="col col-6">
+
+<p>This component demonstrates fetching data from the server.</p>
+
+@if (contacts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>FirstName</th>
+                <th>LastName</th>
+                <th>Email</th>
+                <th>PhoneNumber</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var contact in contacts)
+            {
+                <tr>
+                    <td>@contact.Id</td>
+                    <td>@contact.FirstName</td>
+                    <td>@contact.LastName</td>
+                    <td>@contact.Email</td>
+                    <td>@contact.PhoneNumber</td>
+                    <td>
+                                <button @onclick='@(()=>GetContact(contact.Id))' class="btn btn-sm btn-primary ">Edit</button>
+                    </td>
+                    <td>
+                        <button @onclick='@(()=>DeleteContact(contact.Id))' class="btn btn-sm btn-danger ">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+</div>
+</div>
+
+
+
+@code {
+    private ContactTask.Shared.Data.Contact[]? contacts;
+    private bool edite = false;
+    private ContactTask.Shared.Data.Contact newContact = new ContactTask.Shared.Data.Contact();
+
+    protected override async Task OnInitializedAsync()
+    {
+        contacts = await Http.GetFromJsonAsync<ContactTask.Shared.Data.Contact[]>("api/Contacts/Getcontacts");
+    }
+    private async Task SubmitContact()
+    {
+        if (edite == false)
+        {
+            await Http.PostAsJsonAsync<ContactTask.Shared.Data.Contact>("api/Contacts/PostContact", newContact);
+            await OnInitializedAsync();
+            newContact = new ContactTask.Shared.Data.Contact();
+        }
+        else
+        {
+            await Http.PutAsJsonAsync<ContactTask.Shared.Data.Contact>("api/Contacts/PutContact/"+ newContact.Id,newContact);
+            await OnInitializedAsync();
+            edite=false;
+            newContact = new ContactTask.Shared.Data.Contact();
+        }
+    }
+    private async Task DeleteContact(int id)
+    {
+        await Http.DeleteAsync("api/Contacts/DeleteContact/"+ id);
+        await OnInitializedAsync();
+    }
+    private async Task GetContact(int id)
+    {
+        newContact = await Http.GetFromJsonAsync<ContactTask.Shared.Data.Contact>("api/Contacts/GetContact/" + id);
+        //await OnInitializedAsync();
+        edite=true;
+
+    }
+}
+
+
